@@ -8,20 +8,26 @@ const copy = {
     home: 'Ana sayfa', founder: 'Kurucu blogu ↗', eyebrow: 'Rang / Blog', title: 'Fikirler,<br>sistemler<br>ve sinyaller.',
     intro: 'Dijital ürünler, medya, altyapı, veri ve yapay zekâ üzerine pratik notlar. Yazılar Supabase üzerinden yayınlanır.',
     posts: 'Yazılar', feedbackEyebrow: 'Söz sende', feedbackTitle: 'Görüşünü paylaş.',
-    feedbackIntro: 'Yazılar hakkında ne düşündüğünü bize gönder. Adın ve e-posta adresin yalnızca geri bildiriminle birlikte saklanır.',
+    feedbackIntro: 'Yazılar hakkında ne düşündüğünü bize gönder. Adın ve görüşün yalnızca onaylandıktan sonra yayınlanır; e-posta adresin hiçbir zaman gösterilmez.',
+    feedbackPublicTitle: 'Ziyaretçi görüşleri',
     name: 'Ad', email: 'E-posta', message: 'Görüşün', submit: 'Görüşü gönder',
+    feedbackEmpty: 'Henüz yayınlanmış görüş yok.',
     loading: 'Yazılar yükleniyor…', empty: 'Henüz yayınlanmış yazı yok.', setup: 'Supabase URL ve anon key ekleyin; örn. window.RANG_SUPABASE_CONFIG = { url, anonKey }.',
-    loadError: 'Yazılar şu anda yüklenemiyor.', submitting: 'Gönderiliyor…', success: 'Görüşün için teşekkürler.',
+    loadError: 'Yazılar şu anda yüklenemiyor.', submitting: 'Gönderiliyor…', success: 'Görüşün onay için gönderildi, teşekkürler.',
+    feedbackLoadError: 'Görüşler şu anda yüklenemiyor.',
     submitError: 'Görüş gönderilemedi. Lütfen daha sonra tekrar dene.'
   },
   en: {
     home: 'Home', founder: "Founder's blog ↗", eyebrow: 'Rang / Blog', title: 'Ideas,<br>systems<br>and signals.',
     intro: 'Practical notes on digital products, media, infrastructure, data, and AI. Posts are published through Supabase.',
     posts: 'Articles', feedbackEyebrow: 'Your turn', feedbackTitle: 'Share your thoughts.',
-    feedbackIntro: 'Tell us what you think about the articles. Your name and email are stored only with your feedback.',
+    feedbackIntro: 'Tell us what you think about the articles. Your name and feedback will only be published after approval; your email is never shown.',
+    feedbackPublicTitle: 'Visitor feedback',
     name: 'Name', email: 'Email', message: 'Your feedback', submit: 'Send feedback',
+    feedbackEmpty: 'There are no published comments yet.',
     loading: 'Loading articles…', empty: 'There are no published articles yet.', setup: 'Add your Supabase URL and anon key, e.g. window.RANG_SUPABASE_CONFIG = { url, anonKey }.',
-    loadError: 'Articles are unavailable right now.', submitting: 'Sending…', success: 'Thanks for sharing your thoughts.',
+    loadError: 'Articles are unavailable right now.', submitting: 'Sending…', success: 'Your feedback was sent for approval. Thank you.',
+    feedbackLoadError: 'Feedback is unavailable right now.',
     submitError: 'Your feedback could not be sent. Please try again later.'
   }
 };
@@ -31,6 +37,8 @@ const postList = document.getElementById('post-list');
 const postsStatus = document.getElementById('posts-status');
 const form = document.getElementById('feedback-form');
 const formStatus = document.getElementById('form-status');
+const feedbackList = document.getElementById('feedback-list');
+const feedbackListStatus = document.getElementById('feedback-list-status');
 
 function applyLanguage(nextLanguage) {
   language = nextLanguage;
@@ -93,6 +101,32 @@ async function loadPosts(client) {
   data.forEach((post) => postList.append(makePost(post)));
 }
 
+function makeFeedback(feedback) {
+  const article = document.createElement('article');
+  article.className = 'feedback-card';
+  const message = document.createElement('p');
+  message.textContent = feedback.feedback;
+  const author = document.createElement('p');
+  author.className = 'feedback-author';
+  author.textContent = feedback.name;
+  article.append(message, author);
+  return article;
+}
+
+async function loadFeedback(client) {
+  const { data, error } = await client.from('blog_feedback')
+    .select('name, feedback')
+    .eq('is_published', true)
+    .order('created_at', { ascending: false });
+  if (error) {
+    feedbackListStatus.textContent = copy[language].feedbackLoadError;
+    console.error('Could not load published feedback:', error);
+    return;
+  }
+  feedbackList.replaceChildren(...data.map(makeFeedback));
+  feedbackListStatus.textContent = data.length ? '' : copy[language].feedbackEmpty;
+}
+
 async function sendFeedback(client, event) {
   event.preventDefault();
   const button = form.querySelector('button[type="submit"]');
@@ -108,6 +142,7 @@ async function sendFeedback(client, event) {
   button.disabled = false;
   button.textContent = copy[language].submit;
   formStatus.textContent = error ? copy[language].submitError : copy[language].success;
+  if (error) console.error('Could not submit feedback:', error);
   if (!error) form.reset();
 }
 
@@ -128,5 +163,14 @@ if (!isConfigured || !window.supabase) {
 } else {
   const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   loadPosts(client);
+  loadFeedback(client);
+  client.channel('published-blog-feedback')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'blog_feedback' }, loadFeedback.bind(null, client))
+    .subscribe((status, error) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error('Live feedback updates are unavailable:', error || status);
+      }
+    });
+  window.setInterval(() => loadFeedback(client), 15000);
   form.addEventListener('submit', (event) => sendFeedback(client, event));
 }
