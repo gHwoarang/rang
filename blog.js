@@ -1,5 +1,5 @@
-const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://bjolpqrqapihzojlnwlt.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_2S1zSPOTQfYqoJiZA1TtNw_B31Q5szC';
 
 const copy = {
   tr: {
