@@ -17,7 +17,7 @@ alter table public.blog_posts
 
 update public.blog_posts
 set is_published = true
-where is_published is null;
+where is_published is distinct from true;
 
 create table if not exists public.blog_feedback (
   id uuid primary key default gen_random_uuid(),
