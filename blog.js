@@ -1,5 +1,5 @@
 const runtimeConfig = (typeof window !== 'undefined' && window.RANG_SUPABASE_CONFIG) || {};
-const SUPABASE_URL = String(runtimeConfig.url || 'https://YOUR_PROJECT_ID.supabase.co').trim();
+const SUPABASE_URL = String(runtimeConfig.url || 'https://bjolpqrqapihzojlnwlt.supabase.co').trim();
 const SUPABASE_ANON_KEY = String(runtimeConfig.anonKey || '').trim();
 
 
