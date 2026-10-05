@@ -1,0 +1,130 @@
+const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+const copy = {
+  tr: {
+    home: 'Ana sayfa', founder: 'Kurucu blogu ↗', eyebrow: 'Rang / Blog', title: 'Fikirler,<br>sistemler<br>ve sinyaller.',
+    intro: 'Dijital ürünler, medya, altyapı, veri ve yapay zekâ üzerine pratik notlar. Yazılar Supabase üzerinden yayınlanır.',
+    posts: 'Yazılar', feedbackEyebrow: 'Söz sende', feedbackTitle: 'Görüşünü paylaş.',
+    feedbackIntro: 'Yazılar hakkında ne düşündüğünü bize gönder. Adın ve e-posta adresin yalnızca geri bildiriminle birlikte saklanır.',
+    name: 'Ad', email: 'E-posta', message: 'Görüşün', submit: 'Görüşü gönder',
+    loading: 'Yazılar yükleniyor…', empty: 'Henüz yayınlanmış yazı yok.', setup: 'Supabase ayarlarını tamamlayın ve bağlantıyı kontrol edin.',
+    loadError: 'Yazılar şu anda yüklenemiyor.', submitting: 'Gönderiliyor…', success: 'Görüşün için teşekkürler.',
+    submitError: 'Görüş gönderilemedi. Lütfen daha sonra tekrar dene.'
+  },
+  en: {
+    home: 'Home', founder: "Founder's blog ↗", eyebrow: 'Rang / Blog', title: 'Ideas,<br>systems<br>and signals.',
+    intro: 'Practical notes on digital products, media, infrastructure, data, and AI. Posts are published through Supabase.',
+    posts: 'Articles', feedbackEyebrow: 'Your turn', feedbackTitle: 'Share your thoughts.',
+    feedbackIntro: 'Tell us what you think about the articles. Your name and email are stored only with your feedback.',
+    name: 'Name', email: 'Email', message: 'Your feedback', submit: 'Send feedback',
+    loading: 'Loading articles…', empty: 'There are no published articles yet.', setup: 'Add your Supabase settings and check the connection.',
+    loadError: 'Articles are unavailable right now.', submitting: 'Sending…', success: 'Thanks for sharing your thoughts.',
+    submitError: 'Your feedback could not be sent. Please try again later.'
+  }
+};
+
+let language = localStorage.getItem('rang-language') === 'en' ? 'en' : 'tr';
+const postList = document.getElementById('post-list');
+const postsStatus = document.getElementById('posts-status');
+const form = document.getElementById('feedback-form');
+const formStatus = document.getElementById('form-status');
+
+function applyLanguage(nextLanguage) {
+  language = nextLanguage;
+  const text = copy[language];
+  document.documentElement.lang = language;
+  document.title = language === 'tr' ? 'Rang Blog' : 'Rang Blog';
+  document.querySelectorAll('[data-copy]').forEach((element) => {
+    const value = text[element.dataset.copy];
+    if (value !== undefined) {
+      if (element.matches('h1')) element.innerHTML = value;
+      else element.textContent = value;
+    }
+  });
+  document.querySelectorAll('[data-lang]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.lang === language));
+  });
+  localStorage.setItem('rang-language', language);
+}
+
+function makePost(post) {
+  const article = document.createElement('article');
+  article.className = 'post-card';
+  const meta = document.createElement('div');
+  meta.className = 'post-meta';
+  const date = post.published_at ? new Date(post.published_at) : null;
+  meta.textContent = [post.topic, date && !Number.isNaN(date.valueOf()) ? date.toLocaleDateString(language) : ''].filter(Boolean).join(' / ');
+  const content = document.createElement('div');
+  const heading = document.createElement('h3');
+  heading.textContent = post.title;
+  content.append(heading);
+  if (post.excerpt) {
+    const excerpt = document.createElement('p');
+    excerpt.className = 'post-excerpt';
+    excerpt.textContent = post.excerpt;
+    content.append(excerpt);
+  }
+  const body = document.createElement('div');
+  body.className = 'post-content';
+  (post.content || '').split(/\r?\n\s*\r?\n/).filter(Boolean).forEach((paragraphText) => {
+    const paragraph = document.createElement('p');
+    paragraph.textContent = paragraphText;
+    body.append(paragraph);
+  });
+  content.append(body);
+  article.append(meta, content);
+  return article;
+}
+
+async function loadPosts(client) {
+  postsStatus.textContent = copy[language].loading;
+  const { data, error } = await client.from('blog_posts')
+    .select('slug, title, excerpt, content, topic, published_at')
+    .eq('is_published', true)
+    .order('published_at', { ascending: false });
+  if (error) {
+    postsStatus.textContent = copy[language].loadError;
+    return;
+  }
+  postsStatus.textContent = data.length ? '' : copy[language].empty;
+  data.forEach((post) => postList.append(makePost(post)));
+}
+
+async function sendFeedback(client, event) {
+  event.preventDefault();
+  const button = form.querySelector('button[type="submit"]');
+  const values = new FormData(form);
+  button.disabled = true;
+  button.textContent = copy[language].submitting;
+  formStatus.textContent = '';
+  const { error } = await client.from('blog_feedback').insert({
+    name: values.get('name').trim(),
+    email: values.get('email').trim(),
+    feedback: values.get('feedback').trim()
+  });
+  button.disabled = false;
+  button.textContent = copy[language].submit;
+  formStatus.textContent = error ? copy[language].submitError : copy[language].success;
+  if (!error) form.reset();
+}
+
+document.getElementById('year').textContent = new Date().getFullYear();
+document.querySelectorAll('[data-lang]').forEach((button) => {
+  button.addEventListener('click', () => applyLanguage(button.dataset.lang));
+});
+applyLanguage(language);
+
+const isConfigured = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('YOUR_PROJECT') &&
+  SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes('YOUR_SUPABASE');
+if (!isConfigured || !window.supabase) {
+  postsStatus.textContent = copy[language].setup;
+  const submitButton = form.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  formStatus.dataset.copy = 'setup';
+  formStatus.textContent = copy[language].setup;
+} else {
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  loadPosts(client);
+  form.addEventListener('submit', (event) => sendFeedback(client, event));
+}

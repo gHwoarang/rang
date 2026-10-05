@@ -46,6 +46,7 @@ const copy = {
     service: ['media service', 'We build media<br>that moves people.', 'From media strategy and creative production to technology and education, we build work designed to earn attention and create impact.'],
     fintech: ['fintech', 'We turn finance<br>into products.', 'We build fintech products that simplify financial operations, make data visible, and scale as teams grow.', 'Fintech in progress'],
     blog: ['blog', 'Ideas, systems<br>and signals.', 'Practical notes on digital products, media, infrastructure, data, AI, SEO, and the systems behind sustainable growth.'],
+    blogLink: 'Explore the Rang blog ↗',
     blogLabels: ['Topics', 'Blog titles', 'Latest articles', ['SEO & GEO', 'Product Development', 'Media & Ad Ops', 'Infrastructure', 'Data & AI']],
     footer: 'Products / Digital / Media Service / Fintech / Blog',
     contactCard: ['Get in touch', "Let's make<br>something work.", 'Digital products, media services, and fintech inquiries.'],
@@ -81,6 +82,7 @@ const copy = {
     service: ['medya hizmetleri', 'İnsanları harekete<br>geçiren medya.', 'Medya stratejisi ve yaratıcı üretimden teknoloji ve eğitime kadar dikkat kazanan ve etki yaratan işler üretiyoruz.'],
     fintech: ['fintech', 'Finansı<br>ürüne dönüştürüyoruz.', 'Finansal operasyonları sadeleştiren, veriyi görünür kılan ve ekiplerle birlikte ölçeklenen fintech ürünleri geliştiriyoruz.', 'Fintech geliştirme sürecinde'],
     blog: ['blog', 'Fikirler, sistemler<br>ve sinyaller.', 'Dijital ürünler, medya, altyapı, veri, yapay zekâ, SEO ve sürdürülebilir büyümenin arkasındaki sistemler üzerine pratik notlar.'],
+    blogLink: 'Rang blogunu keşfet ↗',
     blogLabels: ['Konular', 'Blog başlıkları', 'Son yazılar', ['SEO & GEO', 'Ürün Geliştirme', 'Medya & Reklam Operasyonları', 'Altyapı', 'Veri & Yapay Zekâ']],
     footer: 'Ürünler / Dijital / Medya Hizmetleri / Fintech / Blog',
     contactCard: ['İletişime geç', 'Birlikte çalışan<br>bir şey yapalım.', 'Dijital ürün, medya hizmeti ve fintech talepleri.'],
@@ -133,20 +135,12 @@ function applyLanguage(lang) {
       item.innerHTML = `${number} ${items[index]}`;
     });
   });
-  document.querySelectorAll('#blog article').forEach((article, index) => {
-    article.querySelector('h3').textContent = t.blogItems[index][0];
-    article.querySelectorAll('.article-body p').forEach((paragraph, paragraphIndex) => { paragraph.textContent = t.blogItems[index][1][paragraphIndex]; });
-  });
-  document.querySelector('.blog-topics > p').textContent = t.blogLabels[0];
-  document.querySelector('.blog-index > p').textContent = t.blogLabels[1];
-  document.querySelector('.blog-section-title').textContent = t.blogLabels[2];
+  document.querySelector('.blog-visit').textContent = t.blogLink;
   const blogChoice = document.querySelector('.blog-choice');
   blogChoice.querySelector('strong').innerHTML = lang === 'tr' ? 'İki blog.<br>Biraz tavşan deliği.' : 'Two tabs.<br>One rabbit hole.';
   blogChoice.querySelector('p').textContent = lang === 'tr' ? 'İş modunda mıyız, biraz dağılıyor muyuz?' : 'Work mode or a little wandering?';
-  blogChoice.querySelector('a').textContent = lang === 'tr' ? 'Rang blog — fikirler mesaide ↓' : 'Rang blog — ideas at work ↓';
+  blogChoice.querySelector('a').textContent = lang === 'tr' ? 'Rang blog — fikirler mesaide ↗' : 'Rang blog — ideas at work ↗';
   blogChoice.querySelector('a:last-child').textContent = lang === 'tr' ? 'Kurucunun blogu — mesai dışı ↗' : "Founder's blog — off the clock ↗";
-  document.querySelectorAll('.blog-topics span').forEach((topic, index) => { topic.textContent = t.blogLabels[3][index]; });
-  document.querySelectorAll('.blog-index > a').forEach((link, index) => { link.innerHTML = `<span>0${index + 1}</span> ${t.blogItems[index][0]} <b>↓</b>`; });
   document.querySelector('footer p:nth-child(2)').textContent = t.footer;
   document.querySelectorAll('[data-lang]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.lang === lang)));
   localStorage.setItem('rang-language', lang);
