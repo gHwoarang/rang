@@ -1,5 +1,7 @@
-const SUPABASE_URL = 'https://bjolpqrqapihzojlnwlt.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqb2xwcXJxYXBpaHpvamxud2x0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyMzM0NDYsImV4cCI6MjEwNjgwOTQ0Nn0.-4PPKSXcOoVgG9etCOgz7yIfnCXxiFSrWUCie-IcDiQ';
+const runtimeConfig = (typeof window !== 'undefined' && window.RANG_SUPABASE_CONFIG) || {};
+const SUPABASE_URL = String(runtimeConfig.url || 'https://YOUR_PROJECT_ID.supabase.co').trim();
+const SUPABASE_ANON_KEY = String(runtimeConfig.anonKey || '').trim();
+
 
 const copy = {
   tr: {
@@ -8,7 +10,7 @@ const copy = {
     posts: 'Yazılar', feedbackEyebrow: 'Söz sende', feedbackTitle: 'Görüşünü paylaş.',
     feedbackIntro: 'Yazılar hakkında ne düşündüğünü bize gönder. Adın ve e-posta adresin yalnızca geri bildiriminle birlikte saklanır.',
     name: 'Ad', email: 'E-posta', message: 'Görüşün', submit: 'Görüşü gönder',
-    loading: 'Yazılar yükleniyor…', empty: 'Henüz yayınlanmış yazı yok.', setup: 'Supabase ayarlarını tamamlayın ve bağlantıyı kontrol edin.',
+    loading: 'Yazılar yükleniyor…', empty: 'Henüz yayınlanmış yazı yok.', setup: 'Supabase URL ve anon key ekleyin; örn. window.RANG_SUPABASE_CONFIG = { url, anonKey }.',
     loadError: 'Yazılar şu anda yüklenemiyor.', submitting: 'Gönderiliyor…', success: 'Görüşün için teşekkürler.',
     submitError: 'Görüş gönderilemedi. Lütfen daha sonra tekrar dene.'
   },
@@ -18,7 +20,7 @@ const copy = {
     posts: 'Articles', feedbackEyebrow: 'Your turn', feedbackTitle: 'Share your thoughts.',
     feedbackIntro: 'Tell us what you think about the articles. Your name and email are stored only with your feedback.',
     name: 'Name', email: 'Email', message: 'Your feedback', submit: 'Send feedback',
-    loading: 'Loading articles…', empty: 'There are no published articles yet.', setup: 'Add your Supabase settings and check the connection.',
+    loading: 'Loading articles…', empty: 'There are no published articles yet.', setup: 'Add your Supabase URL and anon key, e.g. window.RANG_SUPABASE_CONFIG = { url, anonKey }.',
     loadError: 'Articles are unavailable right now.', submitting: 'Sending…', success: 'Thanks for sharing your thoughts.',
     submitError: 'Your feedback could not be sent. Please try again later.'
   }
@@ -81,7 +83,7 @@ async function loadPosts(client) {
   postsStatus.textContent = copy[language].loading;
   const { data, error } = await client.from('blog_posts')
     .select('slug, title, excerpt, content, topic, published_at')
-    .eq('is_published', true)
+    .or('is_published.is.null,is_published.eq.true')
     .order('published_at', { ascending: false });
   if (error) {
     postsStatus.textContent = copy[language].loadError;

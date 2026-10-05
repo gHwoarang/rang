@@ -8,12 +8,16 @@ create table if not exists public.blog_posts (
   content text not null,
   topic text not null default 'General',
   published_at timestamptz not null default now(),
-  is_published boolean not null default false,
+  is_published boolean not null default true,
   created_at timestamptz not null default now()
 );
 
 alter table public.blog_posts
-  add column if not exists is_published boolean not null default false;
+  alter column is_published set default true;
+
+update public.blog_posts
+set is_published = true
+where is_published is null;
 
 create table if not exists public.blog_feedback (
   id uuid primary key default gen_random_uuid(),
